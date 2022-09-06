@@ -12,34 +12,36 @@ class ElasticsearchPlugin extends Plugin {
   constructor (...args) {
     super(...args)
 
-    this.addSub('apm:elasticsearch:query:start', ({ params }) => {
+    const name = this.constructor.name
+
+    this.addSub(`apm:${name}:query:start`, ({ params }) => {
       const store = storage.getStore()
       const childOf = store ? store.span : store
       const body = getBody(params.body || params.bulkBody)
       const span = this.tracer.startSpan('elasticsearch.query', {
         childOf,
         tags: {
-          'db.type': 'elasticsearch',
+          'db.type': name,
           'span.kind': 'client',
-          'service.name': this.config.service || `${this.tracer._service}-elasticsearch`,
+          'service.name': this.config.service || `${this.tracer._service}-${name}`,
           'resource.name': `${params.method} ${quantizePath(params.path)}`,
           'span.type': 'elasticsearch',
-          'elasticsearch.url': params.path,
-          'elasticsearch.method': params.method,
-          'elasticsearch.body': body,
-          'elasticsearch.params': JSON.stringify(params.querystring || params.query)
+          [`${name}.url`]: params.path,
+          [`${name}.method`]: params.method,
+          [`${name}.body`]: body,
+          [`${name}.params`]: JSON.stringify(params.querystring || params.query)
         }
       })
       analyticsSampler.sample(span, this.config.measured)
       this.enter(span, store)
     })
 
-    this.addSub('apm:elasticsearch:query:error', err => {
+    this.addSub(`apm:${name}:query:error`, err => {
       const span = storage.getStore().span
       span.setTag('error', err)
     })
 
-    this.addSub('apm:elasticsearch:query:finish', ({ params }) => {
+    this.addSub(`apm:${name}:query:finish`, ({ params }) => {
       const span = storage.getStore().span
       this.config.hooks.query(span, params)
       span.finish()

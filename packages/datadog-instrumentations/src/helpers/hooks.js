@@ -9,6 +9,7 @@ module.exports = {
   '@hapi/hapi': () => require('../hapi'),
   '@koa/router': () => require('../koa'),
   '@node-redis/client': () => require('../redis'),
+  '@opensearch-project/opensearch': () => require('../opensearch'),
   'amqp10': () => require('../amqp10'),
   'amqplib': () => require('../amqplib'),
   'aws-sdk': () => require('../aws-sdk'),
