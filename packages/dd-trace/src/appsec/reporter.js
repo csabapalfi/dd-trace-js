@@ -2,7 +2,6 @@
 
 const addresses = require('./addresses')
 const Limiter = require('../rate_limiter')
-const web = require('../plugins/util/web')
 
 // default limiter, configurable with setRateLimit()
 let limiter = new Limiter(100)
@@ -34,8 +33,6 @@ const RESPONSE_HEADERS_PASSLIST = [
   'content-length',
   'content-type'
 ]
-
-const metricsQueue = new Map()
 
 function resolveHTTPRequest (context) {
   if (!context) return {}
@@ -84,27 +81,9 @@ function formatHeaderName (name) {
     .toLowerCase()
 }
 
-function reportMetrics (metrics, store) {
-  const req = store && store.get('req')
-  const topSpan = web.root(req)
-  if (!topSpan) return false
-
-  if (metrics.duration) {
-    topSpan.setTag('_dd.appsec.waf.duration', metrics.duration)
-  }
-
-  if (metrics.durationExt) {
-    topSpan.setTag('_dd.appsec.waf.duration_ext', metrics.durationExt)
-  }
-
-  if (metrics.rulesVersion) {
-    topSpan.setTag('_dd.appsec.event_rules.version', metrics.rulesVersion)
-  }
-}
-
 function reportAttack (attackData, store) {
   const req = store && store.get('req')
-  const topSpan = web.root(req)
+  const topSpan = req && req._datadog && req._datadog.span
   if (!topSpan) return false
 
   const currentTags = topSpan.context()._tags
@@ -117,6 +96,7 @@ function reportAttack (attackData, store) {
     newTags['manual.keep'] = 'true' // TODO: figure out how to keep appsec traces with sampling revamp
   }
 
+  // the library must not modify the trace’s priority and origin fields if the priority is already strictly greater than 0
   // TODO: maybe add this to format.js later (to take decision as late as possible)
   if (!currentTags['_dd.origin']) {
     newTags['_dd.origin'] = 'appsec'
@@ -149,17 +129,9 @@ function reportAttack (attackData, store) {
   topSpan.addTags(newTags)
 }
 
-function finishRequest (req, context) {
-  const topSpan = web.root(req)
-  if (!topSpan) return false
-
-  if (metricsQueue.size) {
-    topSpan.addTags(Object.fromEntries(metricsQueue))
-
-    metricsQueue.clear()
-  }
-
-  if (!context || !topSpan.context()._tags['appsec.event']) return false
+function finishAttacks (req, context) {
+  const topSpan = req && req._datadog && req._datadog.span
+  if (!topSpan || !context) return false
 
   const resolvedResponse = resolveHTTPResponse(context)
 
@@ -177,13 +149,11 @@ function setRateLimit (rateLimit) {
 }
 
 module.exports = {
-  metricsQueue,
   resolveHTTPRequest,
   resolveHTTPResponse,
   filterHeaders,
   formatHeaderName,
-  reportMetrics,
   reportAttack,
-  finishRequest,
+  finishAttacks,
   setRateLimit
 }

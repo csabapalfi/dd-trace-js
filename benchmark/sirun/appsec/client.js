@@ -37,6 +37,7 @@ if (Number(process.env.ATTACK_404)) {
 }
 
 if (Number(process.env.ATTACK_QS)) {
+  // I think this does nothing right ?
   opts.path += '?k=<script>alert()</script>'
 }
 
