@@ -3,11 +3,10 @@ let seqId = 0
 function sendData (config, application, host, reqType, payload = {}) {
   const {
     hostname,
-    port
+    port,
+    url
   } = config
   const options = {
-    hostname,
-    port,
     method: 'POST',
     path: '/telemetry/proxy/api/v2/apmtelemetry',
     headers: {
@@ -15,6 +14,12 @@ function sendData (config, application, host, reqType, payload = {}) {
       'dd-telemetry-api-version': 'v1',
       'dd-telemetry-request-type': reqType
     }
+  }
+  if (url) {
+    options.url = url
+  } else {
+    options.hostname = hostname
+    options.port = port
   }
   const data = JSON.stringify({
     api_version: 'v1',
