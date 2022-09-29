@@ -62,7 +62,7 @@ function generatePackFilesForCommits (commitsToUpload) {
   const tmpFolder = os.tmpdir()
 
   const randomPrefix = Math.floor(Math.random() * 10000)
-  const temporaryPath = path.join(tmpFolder, randomPrefix)
+  const temporaryPath = path.join(tmpFolder, `${randomPrefix}`)
 
   try {
     const orderedCommits =
@@ -75,7 +75,7 @@ function generatePackFilesForCommits (commitsToUpload) {
   } catch (e) {
     // try it again in cwd
     try {
-      const cwdPath = path.join(process.cwd(), randomPrefix)
+      const cwdPath = path.join(process.cwd(), `${randomPrefix}`)
       const orderedCommits =
         execSync(
           `git pack-objects --compression=9 --max-pack-size=3m ${cwdPath}`,
