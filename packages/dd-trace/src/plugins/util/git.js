@@ -73,7 +73,19 @@ function generatePackFilesForCommits (commitsToUpload) {
 
     return orderedCommits.map(commit => `${temporaryPath}-${commit}.pack`)
   } catch (e) {
-    return []
+    // try it again in cwd
+    try {
+      const cwdPath = path.join(process.cwd(), randomPrefix)
+      const orderedCommits =
+        execSync(
+          `git pack-objects --compression=9 --max-pack-size=3m ${cwdPath}`,
+          { input: commitsToUpload.join('\n') }
+        ).toString().split('\n').filter(commit => !!commit)
+
+      return orderedCommits.map(commit => `${cwdPath}-${commit}.pack`)
+    } catch (e) {
+      return []
+    }
   }
 }
 
