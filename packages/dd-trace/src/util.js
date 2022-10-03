@@ -10,6 +10,12 @@ function isFalse (str) {
   return str === 'false' || str === '0'
 }
 
+function isTrueOrFalse (str) {
+  if (isTrue(str)) return true
+  if (isFalse(str)) return false
+  return undefined
+}
+
 function isError (value) {
   if (value instanceof Error) {
     return true
@@ -23,5 +29,6 @@ function isError (value) {
 module.exports = {
   isTrue,
   isFalse,
+  isTrueOrFalse,
   isError
 }
